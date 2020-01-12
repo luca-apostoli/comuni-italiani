@@ -4,6 +4,7 @@
 module Lib
   ( startApp
   , app
+  , API
   , module Comuni
   , findComune
   , listOfFilters
@@ -51,16 +52,13 @@ listComuni q = do
     Nothing -> throwError err503
     Just lista -> do
       let filtered = filterComuni q lista
-      if null filtered then throwError err404 else return filtered
+      if null filtered
+        then throwError err404
+        else return filtered
 
 filterComuni :: Maybe String -> [Comune] -> [Comune]
 filterComuni Nothing lista = lista
 filterComuni (Just q) lista = filter (or . listOfFilters q) lista
 
-
 listOfFilters :: String -> Comune -> [Bool]
-listOfFilters q c = [
-    nome c == q
-  , q `elem` cap c
-  , codice c == q
-  ]
+listOfFilters q c = [nome c == q, q `elem` cap c, codice c == q]
