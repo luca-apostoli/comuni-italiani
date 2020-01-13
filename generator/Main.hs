@@ -26,7 +26,7 @@ main =
     , "ComuniApi"
     ]
     defElmImports
-    "elm-client"
+    "elm-client/comuni-client/src"
     [ DefineElm (Proxy :: Proxy Comune)
     , DefineElm (Proxy :: Proxy Zona)
     , DefineElm (Proxy :: Proxy Regione)
