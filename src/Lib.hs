@@ -16,6 +16,7 @@ import Data.Aeson.TH
 import Data.Maybe (fromMaybe)
 import Network.Wai
 import Network.Wai.Handler.Warp
+import Network.Wai.Middleware.Cors (simpleCors)
 import Servant
 
 import Comuni
@@ -24,7 +25,7 @@ type API
    = "comuni" :> QueryParam "q" String :> Get '[ JSON] [Comune] :<|> "comune" :> Capture "codice" String :> Get '[ JSON] Comune
 
 startApp :: IO ()
-startApp = run 8080 app
+startApp = run 8080 $ simpleCors app
 
 app :: Application
 app = serve api server
@@ -61,4 +62,4 @@ filterComuni Nothing lista = lista
 filterComuni (Just q) lista = filter (or . listOfFilters q) lista
 
 listOfFilters :: String -> Comune -> [Bool]
-listOfFilters q c = [nome c == q, q `elem` cap c, codice c == q]
+listOfFilters q c = [nome c == q, q `elem` cap c, codice c == q, q == r_nome (regione c), q == p_nome (provincia c)]

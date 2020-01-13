@@ -133,7 +133,7 @@ getComuni query_q toMsg =
             , headers =
                 []
             , url =
-                Url.Builder.crossOrigin ""
+                Url.Builder.crossOrigin "http://localhost:8080"
                     [ "comuni"
                     ]
                     params
@@ -161,7 +161,7 @@ getComuneByCodice capture_codice toMsg =
             , headers =
                 []
             , url =
-                Url.Builder.crossOrigin ""
+                Url.Builder.crossOrigin "http://localhost:8080"
                     [ "comune"
                     , capture_codice
                     ]
