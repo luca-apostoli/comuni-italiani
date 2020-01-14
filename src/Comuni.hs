@@ -4,6 +4,9 @@
 
 module Comuni
   ( Comune(..)
+  , Zona (..)
+  , Regione (..)
+  , Provincia (..)
   , readComuni
   ) where
 
@@ -62,13 +65,13 @@ instance FromJSON Provincia where
 instance FromJSON Comune
 
 instance ToJSON Zona where
-  toJSON = genericToJSON defaultOptions {fieldLabelModifier = drop 2}
+  toJSON = genericToJSON defaultOptions
 
 instance ToJSON Regione where
-  toJSON = genericToJSON defaultOptions {fieldLabelModifier = drop 2}
+  toJSON = genericToJSON defaultOptions
 
 instance ToJSON Provincia where
-  toJSON = genericToJSON defaultOptions {fieldLabelModifier = drop 2}
+  toJSON = genericToJSON defaultOptions
 
 instance ToJSON Comune
 

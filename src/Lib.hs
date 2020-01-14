@@ -1,9 +1,11 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Lib
   ( startApp
   , app
+  , API
   , module Comuni
   , findComune
   , listOfFilters
@@ -15,7 +17,10 @@ import Data.Aeson.TH
 import Data.Maybe (fromMaybe)
 import Network.Wai
 import Network.Wai.Handler.Warp
+import Network.Wai.Middleware.Cors (simpleCors)
 import Servant
+import Data.Char (toLower)
+import Data.List (isSubsequenceOf)
 
 import Comuni
 
@@ -23,7 +28,7 @@ type API
    = "comuni" :> QueryParam "q" String :> Get '[ JSON] [Comune] :<|> "comune" :> Capture "codice" String :> Get '[ JSON] Comune
 
 startApp :: IO ()
-startApp = run 8080 app
+startApp = run 8080 $ simpleCors app
 
 app :: Application
 app = serve api server
@@ -51,16 +56,16 @@ listComuni q = do
     Nothing -> throwError err503
     Just lista -> do
       let filtered = filterComuni q lista
-      if null filtered then throwError err404 else return filtered
+      if null filtered
+        then throwError err404
+        else return filtered
 
 filterComuni :: Maybe String -> [Comune] -> [Comune]
 filterComuni Nothing lista = lista
 filterComuni (Just q) lista = filter (or . listOfFilters q) lista
 
-
 listOfFilters :: String -> Comune -> [Bool]
-listOfFilters q c = [
-    nome c == q
-  , q `elem` cap c
-  , codice c == q
-  ]
+listOfFilters q c = map (isSubsequenceOf (lowerStr q) . lowerStr) $ cap c ++ [nome c, codice c, r_nome (regione c), p_nome (provincia c)]
+
+lowerStr :: String -> String
+lowerStr = map toLower
