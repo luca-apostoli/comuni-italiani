@@ -1,8 +1,8 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, text, div, h1, img, input, b, h2)
-import Html.Attributes exposing (src, placeholder, value)
+import Html exposing (Html, text, div, h1, form, fieldset, input, b, h2)
+import Html.Attributes exposing (src, placeholder, value, class, style)
 import Html.Events exposing (onInput)
 import Http
 import Generated.ComuniApi exposing (Comune, getComuni)
@@ -21,10 +21,7 @@ init : ( Model, Cmd Msg )
 init =
     ( { query = "", comuni = Ok [] }, Cmd.none )
 
-
-
 ---- UPDATE ----
-
 
 type Msg
     = NoOp
@@ -52,11 +49,15 @@ parseResponse resp = case resp of
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ img [ src "/logo.svg" ] []
-        , h1 [] [ text "Ricerca comuni italiani" ]
-        , div [] [
-            input [placeholder "Query", value model.query, onInput UpdateContent] []  
+    div [ class "pure-g" ]
+        [ h1 [ class "pure-u-1" ] [ text "Ricerca comuni italiani" ]
+        , div [ class "pure-u-1-3" ] []
+        , form [ class "pure-form pure-form-aligned pure-u-1-3"] [
+            fieldset [] [
+                div [class "pure-control-group"] [
+                    input [placeholder "Query", value model.query, onInput UpdateContent, style "width" "100%"] []
+                ]
+            ]
           ]
         , showComuni model.comuni
         ]
@@ -66,13 +67,14 @@ showComuni res = case res of
     Err err -> div [] [
             h2 [] [ text err ]
         ]
-    Ok comuni -> div [] <| List.map showComune comuni
+    Ok comuni -> div [ class "pure-u-1" ] <| List.map showComune comuni
 
 showComune : Comune -> Html Msg
-showComune c = div [] [
-        b [] [ text c.nome ]
-        , div [] [ text c.regione.r_nome ]
-        , div [] [ text c.provincia.p_nome ]
+showComune c = div [ class "pure-g m-box" ] [
+        b [ class "pure-u-1" ] [ text c.nome ]
+        , div [ class "pure-u-1-4" ] [ text c.regione.r_nome ]
+        , div [ class "pure-u-1-4" ] [ text c.provincia.p_nome ]
+        , div [ class "pure-u-1-4" ] [ text c.codiceCatastale ]
     ]
 
 ---- PROGRAM ----

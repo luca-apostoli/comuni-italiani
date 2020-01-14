@@ -24,3 +24,19 @@ img {
   margin: 20px 0;
   max-width: 200px;
 }
+
+.pure-g > div {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.l-box {
+  padding: 1em;
+}
+
+.m-box {
+  margin: .5em;
+  padding: 1em;
+  border: rgb(93, 110, 85) 1px solid;
+}

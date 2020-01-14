@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Lib
   ( startApp
@@ -18,6 +19,7 @@ import Network.Wai
 import Network.Wai.Handler.Warp
 import Network.Wai.Middleware.Cors (simpleCors)
 import Servant
+import Data.Char (toLower)
 import Data.List (isSubsequenceOf)
 
 import Comuni
@@ -63,4 +65,7 @@ filterComuni Nothing lista = lista
 filterComuni (Just q) lista = filter (or . listOfFilters q) lista
 
 listOfFilters :: String -> Comune -> [Bool]
-listOfFilters q c = map (isSubsequenceOf q) $ cap c ++ [nome c, codice c, r_nome (regione c), p_nome (provincia c)]
+listOfFilters q c = map (isSubsequenceOf (lowerStr q) . lowerStr) $ cap c ++ [nome c, codice c, r_nome (regione c), p_nome (provincia c)]
+
+lowerStr :: String -> String
+lowerStr = map toLower
