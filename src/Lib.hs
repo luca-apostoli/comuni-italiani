@@ -25,10 +25,11 @@ import Data.List (isSubsequenceOf)
 import Comuni
 
 type API
-   = "comuni" :> QueryParam "q" String :> Get '[ JSON] [Comune] :<|> "comune" :> Capture "codice" String :> Get '[ JSON] Comune
+   = "comuni" :> QueryParam "q" String :> Get '[ JSON] [Comune] :<|> "comune" :> Capture "codice" String :> Get '[ JSON] Comune :<|> Get '[ JSON] String
 
-startApp :: IO ()
-startApp = run 8080 $ simpleCors app
+startApp :: Maybe String -> IO ()
+startApp (Just port) = run (read port :: Int) $ simpleCors app
+startApp _ = run 8080 $ simpleCors app
 
 app :: Application
 app = serve api server
@@ -37,7 +38,10 @@ api :: Proxy API
 api = Proxy
 
 server :: Server API
-server = listComuni :<|> findComune
+server = listComuni :<|> findComune :<|> healthCheck
+
+healthCheck :: Handler String
+healthCheck = return "OK"
 
 findComune :: String -> Handler Comune
 findComune codiceComune = do
