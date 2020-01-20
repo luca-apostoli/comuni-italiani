@@ -1,6 +1,7 @@
 module Main where
 
+import System.Environment (lookupEnv)
 import Lib
 
 main :: IO ()
-main = startApp
+main = lookupEnv "PORT" >>= startApp
