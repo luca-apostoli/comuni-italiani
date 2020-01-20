@@ -133,7 +133,7 @@ getComuni query_q toMsg =
             , headers =
                 []
             , url =
-                Url.Builder.crossOrigin "http://localhost:8080"
+                Url.Builder.crossOrigin "https://api-comuni-italiani.herokuapp.com"
                     [ "comuni"
                     ]
                     params
@@ -161,7 +161,7 @@ getComuneByCodice capture_codice toMsg =
             , headers =
                 []
             , url =
-                Url.Builder.crossOrigin "http://localhost:8080"
+                Url.Builder.crossOrigin "https://api-comuni-italiani.herokuapp.com"
                     [ "comune"
                     , capture_codice
                     ]
@@ -170,6 +170,33 @@ getComuneByCodice capture_codice toMsg =
                 Http.emptyBody
             , expect =
                 Http.expectJson toMsg jsonDecComune
+            , timeout =
+                Nothing
+            , tracker =
+                Nothing
+            }
+
+get : (Result Http.Error  (String)  -> msg) -> Cmd msg
+get toMsg =
+    let
+        params =
+            List.filterMap identity
+            (List.concat
+                [])
+    in
+        Http.request
+            { method =
+                "GET"
+            , headers =
+                []
+            , url =
+                Url.Builder.crossOrigin "https://api-comuni-italiani.herokuapp.com"
+                    []
+                    params
+            , body =
+                Http.emptyBody
+            , expect =
+                Http.expectJson toMsg Json.Decode.string
             , timeout =
                 Nothing
             , tracker =
