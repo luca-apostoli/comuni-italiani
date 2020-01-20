@@ -42,6 +42,7 @@ executable comuni-italiani-code-gen
   main-is:             Main.hs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
+                     , text
                      , bytestring
                      , aeson
                      , servant

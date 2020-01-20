@@ -5,6 +5,9 @@
 
 module Main where
 
+import System.Environment (lookupEnv)
+import Data.Maybe (fromMaybe)
+import qualified Data.Text as T (Text, pack)
 import           Elm.Derive   (defaultOptions, deriveElmDef)
 
 import           Servant.API  ((:>), Capture, Get, JSON)
@@ -18,26 +21,27 @@ deriveElmDef defaultOptions ''Zona
 deriveElmDef defaultOptions ''Regione
 deriveElmDef defaultOptions ''Provincia
 
-getElmOptions :: ElmOptions
-getElmOptions = 
+getElmOptions :: T.Text -> ElmOptions
+getElmOptions endpoint = 
     let 
       opt = defElmOptions
-      updateOpt x = x { urlPrefix = Static "http://localhost:8080" }
+      updateOpt x = x { urlPrefix = Static endpoint }
     in
       updateOpt opt 
 
 main :: IO ()
-main =
-  generateElmModuleWith
-    getElmOptions
-    [ "Generated"
-    , "ComuniApi"
-    ]
-    defElmImports
-    "elm-client/comuni-client/src"
-    [ DefineElm (Proxy :: Proxy Comune)
-    , DefineElm (Proxy :: Proxy Zona)
-    , DefineElm (Proxy :: Proxy Regione)
-    , DefineElm (Proxy :: Proxy Provincia)
-    ]
-    (Proxy :: Proxy API)
+main = do 
+      endpoint <- lookupEnv "ENDPOINT"
+      generateElmModuleWith
+        (getElmOptions . T.pack $ fromMaybe "http://localhost:8080" endpoint )
+        [ "Generated"
+        , "ComuniApi"
+        ]
+        defElmImports
+        "elm-client/comuni-client/src"
+        [ DefineElm (Proxy :: Proxy Comune)
+        , DefineElm (Proxy :: Proxy Zona)
+        , DefineElm (Proxy :: Proxy Regione)
+        , DefineElm (Proxy :: Proxy Provincia)
+        ]
+        (Proxy :: Proxy API)
