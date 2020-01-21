@@ -17,8 +17,12 @@ library
   hs-source-dirs:      src
   exposed-modules:     Lib
                      , Comuni
+                     , Positive
   build-depends:       base >= 4.7 && < 5
                      , base-compat
+                     , basic-prelude
+                     , http-api-data
+                     , text
                      , directory
                      , bytestring
                      , aeson
