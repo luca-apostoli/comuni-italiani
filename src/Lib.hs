@@ -7,6 +7,7 @@ module Lib
   , app
   , API
   , module Comuni
+  , module Positive
   , findComune
   , listOfFilters
   ) where

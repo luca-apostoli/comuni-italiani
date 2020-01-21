@@ -117,14 +117,29 @@ jsonEncProvincia  val =
    ]
 
 
-getComuni : (Maybe String) -> (Result Http.Error  ((List Comune))  -> msg) -> Cmd msg
-getComuni query_q toMsg =
+
+type alias Positive  = Int
+
+jsonDecPositive : Json.Decode.Decoder ( Positive )
+jsonDecPositive =
+    Json.Decode.int
+
+jsonEncPositive : Positive -> Value
+jsonEncPositive  val = Json.Encode.int val
+
+
+getComuni : (Maybe String) -> (Maybe Positive) -> (Maybe Positive) -> (Result Http.Error  ((List Comune))  -> msg) -> Cmd msg
+getComuni query_q query_pos query_limit toMsg =
     let
         params =
             List.filterMap identity
             (List.concat
                 [ [ query_q
                     |> Maybe.map (Url.Builder.string "q") ]
+                , [ query_pos
+                    |> Maybe.map (String.fromInt >> Url.Builder.string "pos") ]
+                , [ query_limit
+                    |> Maybe.map (String.fromInt >> Url.Builder.string "limit") ]
                 ])
     in
         Http.request
@@ -133,7 +148,7 @@ getComuni query_q toMsg =
             , headers =
                 []
             , url =
-                Url.Builder.crossOrigin "https://api-comuni-italiani.herokuapp.com"
+                Url.Builder.crossOrigin "http://localhost:8080"
                     [ "comuni"
                     ]
                     params
@@ -161,7 +176,7 @@ getComuneByCodice capture_codice toMsg =
             , headers =
                 []
             , url =
-                Url.Builder.crossOrigin "https://api-comuni-italiani.herokuapp.com"
+                Url.Builder.crossOrigin "http://localhost:8080"
                     [ "comune"
                     , capture_codice
                     ]
@@ -190,7 +205,7 @@ get toMsg =
             , headers =
                 []
             , url =
-                Url.Builder.crossOrigin "https://api-comuni-italiani.herokuapp.com"
+                Url.Builder.crossOrigin "http://localhost:8080"
                     []
                     params
             , body =
