@@ -17,6 +17,26 @@ maybeBoolToIntStr mx =
     Just True -> "1"
     Just False -> "0"
 
+type alias ListaComuni  =
+   { comuni: (List Comune)
+   , totale: Int
+   }
+
+jsonDecListaComuni : Json.Decode.Decoder ( ListaComuni )
+jsonDecListaComuni =
+   Json.Decode.succeed (\pcomuni ptotale -> {comuni = pcomuni, totale = ptotale})
+   |> required "comuni" (Json.Decode.list (jsonDecComune))
+   |> required "totale" (Json.Decode.int)
+
+jsonEncListaComuni : ListaComuni -> Value
+jsonEncListaComuni  val =
+   Json.Encode.object
+   [ ("comuni", (Json.Encode.list jsonEncComune) val.comuni)
+   , ("totale", Json.Encode.int val.totale)
+   ]
+
+
+
 type alias Comune  =
    { nome: String
    , codice: String
@@ -128,7 +148,7 @@ jsonEncPositive : Positive -> Value
 jsonEncPositive  val = Json.Encode.int val
 
 
-getComuni : (Maybe String) -> (Maybe Positive) -> (Maybe Positive) -> (Result Http.Error  ((List Comune))  -> msg) -> Cmd msg
+getComuni : (Maybe String) -> (Maybe Positive) -> (Maybe Positive) -> (Result Http.Error  (ListaComuni)  -> msg) -> Cmd msg
 getComuni query_q query_pos query_limit toMsg =
     let
         params =
@@ -155,7 +175,7 @@ getComuni query_q query_pos query_limit toMsg =
             , body =
                 Http.emptyBody
             , expect =
-                Http.expectJson toMsg (Json.Decode.list (jsonDecComune))
+                Http.expectJson toMsg jsonDecListaComuni
             , timeout =
                 Nothing
             , tracker =

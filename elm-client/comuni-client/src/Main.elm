@@ -1,10 +1,10 @@
 module Main exposing (Model, Msg(..), init, main, parseResponse, showComune, showComuni, update, view)
 
 import Browser
-import Generated.ComuniApi exposing (Comune, getComuni)
-import Html exposing (Html, b, div, fieldset, form, h1, h2, input, text, button)
+import Generated.ComuniApi exposing (Comune, ListaComuni, getComuni)
+import Html exposing (Html, b, button, div, fieldset, form, h1, h2, input, text)
 import Html.Attributes exposing (class, placeholder, style, value)
-import Html.Events exposing (onInput, onClick)
+import Html.Events exposing (onClick, onInput)
 import Http
 
 
@@ -16,13 +16,13 @@ type alias Model =
     { query : String
     , pos : Maybe Int
     , limit : Maybe Int
-    , comuni : Result String (List Comune)
+    , listaComuni : Result String ListaComuni
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { query = "", pos = Nothing, limit = Just 25, comuni = Ok [] }, Cmd.none )
+    ( { query = "", pos = Nothing, limit = Just 25, listaComuni = Ok <| ListaComuni [] 0 }, Cmd.none )
 
 
 
@@ -32,7 +32,7 @@ init =
 type Msg
     = NoOp
     | UpdateContent String
-    | UpdateComuni (List Comune)
+    | UpdateComuni ListaComuni
     | AddPosition (Maybe Int)
     | RequestError String
 
@@ -41,36 +41,43 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         UpdateContent newContent ->
-            ( { model | query = newContent }, getComuni (Just newContent) model.pos model.limit parseResponse )
+            ( { model | query = newContent, listaComuni = Ok <| ListaComuni [] 0 }, getComuni (Just newContent) model.pos model.limit parseResponse )
 
-        UpdateComuni comuni ->
-            ( { model | comuni =  applyComuni model.comuni comuni }, Cmd.none )
+        UpdateComuni listaComuni ->
+            ( { model | listaComuni = Ok <| applyComuni model.listaComuni listaComuni }, Cmd.none )
 
-        AddPosition Nothing -> ( model, Cmd.none )
+        AddPosition Nothing ->
+            ( model, Cmd.none )
 
         AddPosition (Just pos) ->
-            ( { model | pos = Just <| pos + Maybe.withDefault 0 model.pos }, getComuni (Just model.query) (Just pos) model.limit parseResponse)
+            ( { model | pos = Just <| pos + Maybe.withDefault 0 model.pos }, getComuni (Just model.query) (Just pos) model.limit parseResponse )
 
         RequestError err ->
-            ( { model | comuni = Err err }, Cmd.none )
+            ( { model | listaComuni = Err err }, Cmd.none )
 
         NoOp ->
             ( model, Cmd.none )
 
 
-applyComuni : Result String (List Comune) -> List Comune -> Result String (List Comune)
-applyComuni c1 c2 = case c1 of
-                    Err _ -> Ok c2
-                    Ok listCom1 -> Ok <| listCom1 ++ c2
+applyComuni : Result String ListaComuni -> ListaComuni -> ListaComuni
+applyComuni c1 c2 =
+    case c1 of
+        Err _ ->
+            c2
 
-parseResponse : Result Http.Error (List Comune) -> Msg
+        Ok listCom1 ->
+            { c2 | comuni = listCom1.comuni ++ c2.comuni, totale = c2.totale }
+
+
+parseResponse : Result Http.Error ListaComuni -> Msg
 parseResponse resp =
     case resp of
-        Ok comuni ->
-            UpdateComuni comuni
+        Ok listaComuni ->
+            UpdateComuni listaComuni
 
         _ ->
             RequestError "Non ci sono risultati per la richiesta"
+
 
 
 ---- VIEW ----
@@ -88,11 +95,11 @@ view model =
                     ]
                 ]
             ]
-        , showComuni model.limit model.comuni
+        , showComuni model.limit model.listaComuni
         ]
 
 
-showComuni : Maybe Int -> Result String (List Comune) -> Html Msg
+showComuni : Maybe Int -> Result String ListaComuni -> Html Msg
 showComuni posToAdd res =
     case res of
         Err err ->
@@ -100,14 +107,22 @@ showComuni posToAdd res =
                 [ h2 [] [ text err ]
                 ]
 
-        Ok comuni ->
-            if List.length comuni > 0 then
-                div [] [
-                    div [ class "pure-u-1" ] <| List.map showComune comuni
-                    , div [ class "pure-u-1" ] [
-                        button [ onClick <| AddPosition posToAdd ] [ text "Carica altri risultati" ]
-                    ] 
-                ]
+        Ok listaComuni ->
+            if List.length listaComuni.comuni > 0 then
+                div [ class "pure-u-1" ]
+                    [ div [] <| List.map showComune listaComuni.comuni
+                    , div [ class "pure-u-1-1" ]
+                        [ 
+                        if listaComuni.totale - List.length listaComuni.comuni > 0 then
+                            div [ class "pure-control-group" ] [
+                                button [ onClick <| AddPosition posToAdd, class "pure-button pure-button-primary" ] [ text "Carica altri risultati" ]
+                            ]
+                            
+                        else
+                            text <| "Hai caricato tutti i " ++ String.fromInt listaComuni.totale ++ " comuni corrispondenti alla ricerca"
+                        ]
+                    ]
+
             else
                 div [ class "pure-u-1 " ] [ text "cerca un comune per Nome, CAP, Regione o Provincia" ]
 
