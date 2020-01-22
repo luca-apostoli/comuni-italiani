@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -7,6 +8,8 @@ module Lib
   , app
   , API
   , module Comuni
+  , module Positive
+  , ListaComuni(..)
   , findComune
   , listOfFilters
   ) where
@@ -21,11 +24,22 @@ import Network.Wai.Middleware.Cors (simpleCors)
 import Servant
 import Data.Char (toLower)
 import Data.List (isSubsequenceOf)
+import GHC.Generics (Generic)
 
 import Comuni
+import Positive
+
+data ListaComuni = ListaComuni {
+      comuni :: [Comune]
+      , totale :: Int
+} deriving (Show, Generic)
 
 type API
-   = "comuni" :> QueryParam "q" String :> Get '[ JSON] [Comune] :<|> "comune" :> Capture "codice" String :> Get '[ JSON] Comune :<|> Get '[ JSON] String
+   = "comuni" :> QueryParam "q" String :> QueryParam "pos" Positive :> QueryParam "limit" Positive :> Get '[ JSON] ListaComuni :<|> "comune" :> Capture "codice" String :> Get '[ JSON] Comune :<|> Get '[ JSON] String
+
+instance ToJSON ListaComuni
+instance FromJSON ListaComuni
+
 
 startApp :: Maybe String -> IO ()
 startApp (Just port) = run (read port :: Int) $ simpleCors app
@@ -53,8 +67,8 @@ findComune codiceComune = do
     Nothing -> throwError err404
     Just comune -> return comune
 
-listComuni :: Maybe String -> Handler [Comune]
-listComuni q = do
+listComuni :: Maybe String -> Maybe Positive -> Maybe Positive -> Handler ListaComuni
+listComuni q pos limit = do
   listaComuni <- liftIO readComuni
   case listaComuni of
     Nothing -> throwError err503
@@ -62,7 +76,16 @@ listComuni q = do
       let filtered = filterComuni q lista
       if null filtered
         then throwError err404
-        else return filtered
+        else return $ ListaComuni ((truncateList limit . dropList pos) filtered) (length filtered)
+
+dropList :: Maybe Positive -> [a] -> [a]
+dropList Nothing = id
+dropList (Just pos) = drop (fromPositive pos)
+
+truncateList :: Maybe Positive -> [a] -> [a]
+truncateList Nothing = id
+truncateList (Just limit) = take (fromPositive limit)
+
 
 filterComuni :: Maybe String -> [Comune] -> [Comune]
 filterComuni Nothing lista = lista

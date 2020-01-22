@@ -17,6 +17,26 @@ maybeBoolToIntStr mx =
     Just True -> "1"
     Just False -> "0"
 
+type alias ListaComuni  =
+   { comuni: (List Comune)
+   , totale: Int
+   }
+
+jsonDecListaComuni : Json.Decode.Decoder ( ListaComuni )
+jsonDecListaComuni =
+   Json.Decode.succeed (\pcomuni ptotale -> {comuni = pcomuni, totale = ptotale})
+   |> required "comuni" (Json.Decode.list (jsonDecComune))
+   |> required "totale" (Json.Decode.int)
+
+jsonEncListaComuni : ListaComuni -> Value
+jsonEncListaComuni  val =
+   Json.Encode.object
+   [ ("comuni", (Json.Encode.list jsonEncComune) val.comuni)
+   , ("totale", Json.Encode.int val.totale)
+   ]
+
+
+
 type alias Comune  =
    { nome: String
    , codice: String
@@ -117,14 +137,29 @@ jsonEncProvincia  val =
    ]
 
 
-getComuni : (Maybe String) -> (Result Http.Error  ((List Comune))  -> msg) -> Cmd msg
-getComuni query_q toMsg =
+
+type alias Positive  = Int
+
+jsonDecPositive : Json.Decode.Decoder ( Positive )
+jsonDecPositive =
+    Json.Decode.int
+
+jsonEncPositive : Positive -> Value
+jsonEncPositive  val = Json.Encode.int val
+
+
+getComuni : (Maybe String) -> (Maybe Positive) -> (Maybe Positive) -> (Result Http.Error  (ListaComuni)  -> msg) -> Cmd msg
+getComuni query_q query_pos query_limit toMsg =
     let
         params =
             List.filterMap identity
             (List.concat
                 [ [ query_q
                     |> Maybe.map (Url.Builder.string "q") ]
+                , [ query_pos
+                    |> Maybe.map (String.fromInt >> Url.Builder.string "pos") ]
+                , [ query_limit
+                    |> Maybe.map (String.fromInt >> Url.Builder.string "limit") ]
                 ])
     in
         Http.request
@@ -133,14 +168,14 @@ getComuni query_q toMsg =
             , headers =
                 []
             , url =
-                Url.Builder.crossOrigin "https://api-comuni-italiani.herokuapp.com"
+                Url.Builder.crossOrigin "http://localhost:8080"
                     [ "comuni"
                     ]
                     params
             , body =
                 Http.emptyBody
             , expect =
-                Http.expectJson toMsg (Json.Decode.list (jsonDecComune))
+                Http.expectJson toMsg jsonDecListaComuni
             , timeout =
                 Nothing
             , tracker =
@@ -161,7 +196,7 @@ getComuneByCodice capture_codice toMsg =
             , headers =
                 []
             , url =
-                Url.Builder.crossOrigin "https://api-comuni-italiani.herokuapp.com"
+                Url.Builder.crossOrigin "http://localhost:8080"
                     [ "comune"
                     , capture_codice
                     ]
@@ -190,7 +225,7 @@ get toMsg =
             , headers =
                 []
             , url =
-                Url.Builder.crossOrigin "https://api-comuni-italiani.herokuapp.com"
+                Url.Builder.crossOrigin "http://localhost:8080"
                     []
                     params
             , body =

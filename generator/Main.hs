@@ -14,12 +14,14 @@ import           Servant.API  ((:>), Capture, Get, JSON)
 import           Servant.Elm  (DefineElm (DefineElm), Proxy (Proxy), defElmImports, defElmOptions, ElmOptions(..), UrlPrefix(..),
                                generateElmModuleWith)
 
-import Lib (API, Comune, Zona, Regione, Provincia)
+import Lib (API, ListaComuni, Comune, Zona, Regione, Provincia, Positive)
 
+deriveElmDef defaultOptions ''ListaComuni
 deriveElmDef defaultOptions ''Comune
 deriveElmDef defaultOptions ''Zona
 deriveElmDef defaultOptions ''Regione
 deriveElmDef defaultOptions ''Provincia
+deriveElmDef defaultOptions ''Positive
 
 getElmOptions :: T.Text -> ElmOptions
 getElmOptions endpoint = 
@@ -39,9 +41,11 @@ main = do
         ]
         defElmImports
         "elm-client/comuni-client/src"
-        [ DefineElm (Proxy :: Proxy Comune)
+        [ DefineElm (Proxy :: Proxy ListaComuni)
+        , DefineElm (Proxy :: Proxy Comune)
         , DefineElm (Proxy :: Proxy Zona)
         , DefineElm (Proxy :: Proxy Regione)
         , DefineElm (Proxy :: Proxy Provincia)
+        , DefineElm (Proxy :: Proxy Positive)
         ]
         (Proxy :: Proxy API)
