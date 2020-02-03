@@ -17,12 +17,13 @@ type alias Model =
     , pos : Maybe Int
     , limit : Maybe Int
     , listaComuni : Result String ListaComuni
+    , loading : Bool
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { query = "", pos = Nothing, limit = Just 25, listaComuni = Ok <| ListaComuni [] 0 }, Cmd.none )
+    ( { query = "", pos = Nothing, limit = Just 25, listaComuni = Ok <| ListaComuni [] 0, loading = False }, Cmd.none )
 
 
 
@@ -41,16 +42,19 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         UpdateContent newContent ->
-            ( { model | query = newContent, listaComuni = Ok <| ListaComuni [] 0 }, getComuni (Just newContent) model.pos model.limit parseResponse )
+            ( { model | query = newContent, listaComuni = Ok <| ListaComuni [] 0, loading = True }, 
+                if String.isEmpty newContent then Cmd.none
+                else getComuni (Just newContent) model.pos model.limit parseResponse 
+            )
 
         UpdateComuni listaComuni ->
-            ( { model | listaComuni = Ok <| applyComuni model.listaComuni listaComuni }, Cmd.none )
+            ( { model | listaComuni = Ok <| applyComuni model.listaComuni listaComuni, loading = False }, Cmd.none )
 
         AddPosition Nothing ->
             ( model, Cmd.none )
 
         AddPosition (Just pos) ->
-            ( { model | pos = Just <| pos + Maybe.withDefault 0 model.pos }, getComuni (Just model.query) (Just pos) model.limit parseResponse )
+            ( { model | pos = Just <| pos + Maybe.withDefault 0 model.pos, loading = True }, getComuni (Just model.query) (Just pos) model.limit parseResponse )
 
         RequestError err ->
             ( { model | listaComuni = Err err }, Cmd.none )
@@ -112,13 +116,12 @@ showComuni posToAdd res =
                 div [ class "pure-u-1" ]
                     [ div [] <| List.map showComune listaComuni.comuni
                     , div [ class "pure-u-1-1" ]
-                        [ 
-                        if listaComuni.totale - List.length listaComuni.comuni > 0 then
-                            div [ class "pure-control-group" ] [
-                                button [ onClick <| AddPosition posToAdd, class "pure-button pure-button-primary" ] [ text "Carica altri risultati" ]
-                            ]
-                            
-                        else
+                        [ if listaComuni.totale - List.length listaComuni.comuni > 0 then
+                            div [ class "pure-control-group" ]
+                                [ button [ onClick <| AddPosition posToAdd, class "pure-button pure-button-primary" ] [ text "Carica altri risultati" ]
+                                ]
+
+                          else
                             text <| "Hai caricato tutti i " ++ String.fromInt listaComuni.totale ++ " comuni corrispondenti alla ricerca"
                         ]
                     ]
