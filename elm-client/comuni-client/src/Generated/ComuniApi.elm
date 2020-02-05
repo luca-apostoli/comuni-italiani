@@ -168,7 +168,7 @@ getComuni query_q query_pos query_limit toMsg =
             , headers =
                 []
             , url =
-                Url.Builder.crossOrigin "https://api-comuni-italiani.herokuapp.com"
+                Url.Builder.crossOrigin "http://localhost:8080"
                     [ "comuni"
                     ]
                     params
@@ -196,7 +196,7 @@ getComuneByCodice capture_codice toMsg =
             , headers =
                 []
             , url =
-                Url.Builder.crossOrigin "https://api-comuni-italiani.herokuapp.com"
+                Url.Builder.crossOrigin "http://localhost:8080"
                     [ "comune"
                     , capture_codice
                     ]
@@ -225,7 +225,7 @@ get toMsg =
             , headers =
                 []
             , url =
-                Url.Builder.crossOrigin "https://api-comuni-italiani.herokuapp.com"
+                Url.Builder.crossOrigin "http://localhost:8080"
                     []
                     params
             , body =

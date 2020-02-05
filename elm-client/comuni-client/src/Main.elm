@@ -2,10 +2,11 @@ module Main exposing (Model, Msg(..), init, main, parseResponse, showComune, sho
 
 import Browser
 import Generated.ComuniApi exposing (Comune, ListaComuni, getComuni)
-import Html exposing (Html, b, button, div, fieldset, form, h1, h2, input, text)
+import Html exposing (Html, b, button, div, fieldset, form, h1, h2, input, text, span)
 import Html.Attributes exposing (class, placeholder, style, value)
 import Html.Events exposing (onClick, onInput)
 import Http
+import Task
 
 
 
@@ -17,12 +18,13 @@ type alias Model =
     , pos : Maybe Int
     , limit : Maybe Int
     , listaComuni : Result String ListaComuni
+    , loading : Bool
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { query = "", pos = Nothing, limit = Just 25, listaComuni = Ok <| ListaComuni [] 0 }, Cmd.none )
+    ( { query = "", pos = Nothing, limit = Just 25, listaComuni = Ok <| ListaComuni [] 0, loading = False }, Cmd.none )
 
 
 
@@ -35,26 +37,33 @@ type Msg
     | UpdateComuni ListaComuni
     | AddPosition (Maybe Int)
     | RequestError String
+    | SetLoading Bool
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         UpdateContent newContent ->
-            ( { model | query = newContent, listaComuni = Ok <| ListaComuni [] 0 }, getComuni (Just newContent) model.pos model.limit parseResponse )
+            ( { model | query = newContent, listaComuni = Ok <| ListaComuni [] 0, loading = True }, 
+                if String.isEmpty newContent then Task.attempt (\_ -> SetLoading False) (Task.fail NoOp)
+                else getComuni (Just newContent) model.pos model.limit parseResponse 
+            )
 
         UpdateComuni listaComuni ->
-            ( { model | listaComuni = Ok <| applyComuni model.listaComuni listaComuni }, Cmd.none )
+            ( { model | listaComuni = Ok <| applyComuni model.listaComuni listaComuni, loading = False }, Cmd.none )
 
         AddPosition Nothing ->
             ( model, Cmd.none )
 
         AddPosition (Just pos) ->
-            ( { model | pos = Just <| pos + Maybe.withDefault 0 model.pos }, getComuni (Just model.query) (Just pos) model.limit parseResponse )
+            ( { model | pos = Just <| pos + Maybe.withDefault 0 model.pos, loading = True }, getComuni (Just model.query) (Just pos) model.limit parseResponse )
 
         RequestError err ->
-            ( { model | listaComuni = Err err }, Cmd.none )
+            ( { model | listaComuni = Err err, loading = False }, Cmd.none )
 
+        SetLoading ldng ->
+            ( { model | loading = ldng } , Cmd.none )
+            
         NoOp ->
             ( model, Cmd.none )
 
@@ -95,7 +104,7 @@ view model =
                     ]
                 ]
             ]
-        , showComuni model.limit model.listaComuni
+        , if model.loading then loading else showComuni model.limit model.listaComuni
         ]
 
 
@@ -112,13 +121,12 @@ showComuni posToAdd res =
                 div [ class "pure-u-1" ]
                     [ div [] <| List.map showComune listaComuni.comuni
                     , div [ class "pure-u-1-1" ]
-                        [ 
-                        if listaComuni.totale - List.length listaComuni.comuni > 0 then
-                            div [ class "pure-control-group" ] [
-                                button [ onClick <| AddPosition posToAdd, class "pure-button pure-button-primary" ] [ text "Carica altri risultati" ]
-                            ]
-                            
-                        else
+                        [ if listaComuni.totale - List.length listaComuni.comuni > 0 then
+                            div [ class "pure-control-group" ]
+                                [ button [ onClick <| AddPosition posToAdd, class "pure-button pure-button-primary" ] [ text "Carica altri risultati" ]
+                                ]
+
+                          else
                             text <| "Hai caricato tutti i " ++ String.fromInt listaComuni.totale ++ " comuni corrispondenti alla ricerca"
                         ]
                     ]
@@ -131,12 +139,16 @@ showComune : Comune -> Html Msg
 showComune c =
     div [ class "pure-g m-box" ]
         [ b [ class "pure-u-1" ] [ text c.nome ]
-        , div [ class "pure-u-1-4" ] [ text c.regione.r_nome ]
-        , div [ class "pure-u-1-4" ] [ text c.provincia.p_nome ]
-        , div [ class "pure-u-1-4" ] [ text c.codiceCatastale ]
+        , div [ class "pure-u-1-4" ] [ text <| "Regione: " ++ c.regione.r_nome ]
+        , div [ class "pure-u-1-4" ] [ text <| "Provincia: " ++ c.provincia.p_nome ]
+        , div [ class "pure-u-1-4" ] [ text <| "Codice Catastale: " ++ c.codiceCatastale ]
+        , div [ class "pure-u-1-4" ] [ text <| "Popolazione: " ++ String.fromInt c.popolazione ]
         ]
 
-
+loading : Html Msg
+loading = div [class "loading"] [
+        span [class "spinner"] []
+    ]
 
 ---- PROGRAM ----
 
